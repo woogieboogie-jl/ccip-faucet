@@ -1,0 +1,31 @@
+{
+  "chainId": 10143,
+  "name": "Monad Testnet",
+  "ticker": "MON",
+  "rpcUrl": "${MONAD_TESTNET_RPC_URL}",
+  "explorerUrl": "https://testnet.monadexplorer.com",
+  "themeColor": "#836EF9",
+  "gradientIntensity": 0.7,
+  
+  "common": {
+    "linkToken": "0x6fE981Dbd557f81ff66836af0932cba535Cbc343",
+    "ccipRouter": "0x5f16e51e3Dcb255480F090157DD01bA962a53E54",
+    "chainSelector": "2183018362218727504"
+  },
+  
+  "contracts": {
+    "faucet": "0x2c6cE078776D3F502743772E6e4d2955BbBb34b0"
+  },
+  
+  "ccip": {
+    "helperChain": "avalanche-fuji"
+  },
+  
+  "accountAbstraction": {
+    "networkName": "monad-testnet",
+    "entryPointAddress": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+    "factoryAddress": "0x4fed0a5b65eac383d36e65733786386709b86be8",
+    "bundlerUrl": "https://api.pimlico.io/v2/monad-testnet/rpc?apikey=${PIMLICO_API_KEY}",
+    "paymasterUrl": "https://api.pimlico.io/v2/monad-testnet/rpc?apikey=${PIMLICO_API_KEY}"
+  }
+} 

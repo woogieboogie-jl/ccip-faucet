@@ -1,0 +1,31 @@
+{
+  "chainId": 57054,
+  "name": "Sonic Blaze",
+  "ticker": "SONIC",
+  "rpcUrl": "${SONIC_BLAZE_RPC_URL}",
+  "explorerUrl": "https://testnet.sonic.explorer.com",
+  "themeColor": "#FF6B35",
+  "gradientIntensity": 0.8,
+  
+  "common": {
+    "linkToken": "0xd8C1eEE32341240A62eC8BC9988320bcC13c8580",
+    "ccipRouter": "0x2fBd4659774D468Db5ca5bacE37869905d8EfA34",
+    "chainSelector": "3676871237479449268"
+  },
+  
+  "contracts": {
+    "faucet": "0x0000000000000000000000000000000000000000"
+  },
+  
+  "ccip": {
+    "helperChain": "avalanche-fuji"
+  },
+  
+  "accountAbstraction": {
+    "networkName": "sonic-blaze",
+    "entryPointAddress": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+    "factoryAddress": "0x0000000000000000000000000000000000000000",
+    "bundlerUrl": "https://api.pimlico.io/v2/sonic-blaze/rpc?apikey=${PIMLICO_API_KEY}",
+    "paymasterUrl": "https://api.pimlico.io/v2/sonic-blaze/rpc?apikey=${PIMLICO_API_KEY}"
+  }
+} 

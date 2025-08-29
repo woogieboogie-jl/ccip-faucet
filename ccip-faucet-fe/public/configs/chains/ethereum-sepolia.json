@@ -1,0 +1,31 @@
+{
+  "chainId": 11155111,
+  "name": "Ethereum Sepolia",
+  "ticker": "ETH",
+  "rpcUrl": "${ETHEREUM_SEPOLIA_RPC_URL}",
+  "explorerUrl": "https://sepolia.etherscan.io",
+  "themeColor": "#627EEA",
+  "gradientIntensity": 0.7,
+  
+  "common": {
+    "linkToken": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+    "ccipRouter": "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
+    "chainSelector": "16015286601757825753"
+  },
+  
+  "contracts": {
+    "faucet": "0x0000000000000000000000000000000000000000"
+  },
+  
+  "ccip": {
+    "helperChain": "avalanche-fuji"
+  },
+  
+  "accountAbstraction": {
+    "networkName": "sepolia",
+    "entryPointAddress": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+    "factoryAddress": "0x6C583EE7c8b8349Cb8C8C8087Dcb4c4eDe6C3060",
+    "bundlerUrl": "https://api.pimlico.io/v2/sepolia/rpc?apikey=${PIMLICO_API_KEY}",
+    "paymasterUrl": "https://api.pimlico.io/v2/sepolia/rpc?apikey=${PIMLICO_API_KEY}"
+  }
+} 

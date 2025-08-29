@@ -1,0 +1,19 @@
+{
+  "name": "ccip-faucet-preflight",
+  "version": "1.0.0",
+  "description": "Pre-flight checks for CCIP faucet deployment",
+  "type": "module",
+  "scripts": {
+    "preflight": "tsx preflight-check.ts",
+    "install-deps": "npm install"
+  },
+  "dependencies": {
+    "viem": "^2.21.45",
+    "tsx": "^4.19.2",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3"
+  }
+}

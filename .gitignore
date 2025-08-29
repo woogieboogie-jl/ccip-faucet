@@ -1,0 +1,123 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+build/
+dist/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Gatsby files
+.cache/
+# Only ignore Gatsby's auto-generated public folder, not our Vite public assets
+# public
+
+# Allow essential public assets for Vite
+!ccip-faucet-fe/public/
+!ccip-faucet-fe/public/favicon.ico
+!ccip-faucet-fe/public/tokens/
+!ccip-faucet-fe/public/tokens/*.png
+!ccip-faucet-fe/public/tokens/*.svg
+!ccip-faucet-fe/public/*.ico
+!ccip-faucet-fe/public/*.png
+!ccip-faucet-fe/public/*.svg
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Vercel
+.vercel
+
+# Turbo
+.turbo
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Foundry/Forge (for smart contracts)
+ccip-faucet/cache/**
+ccip-faucet/broadcast/**
+ccip-faucet/artifacts/**
+ccip-faucet/typechain-types/**
+ccip-faucet-contracts/broadcast/**
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db 

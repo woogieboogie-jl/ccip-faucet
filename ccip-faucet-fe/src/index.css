@@ -1,0 +1,406 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Ensure all text elements inherit Inter Tight font family */
+* {
+  font-family: inherit;
+}
+
+/* Specific overrides for common text elements */
+h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select, label {
+  font-family: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Native tokens: Left to Right diagonal with dynamic angle */
+@keyframes rain-shower-native {
+  0% {
+    transform: translateY(-30px) translateX(0px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(calc(100vh + 30px)) translateX(var(--native-angle, 80vw));
+    opacity: 0;
+  }
+}
+
+/* Chainlink tokens: Right to Left diagonal with dynamic angle */
+@keyframes rain-shower-chainlink {
+  0% {
+    transform: translateY(-30px) translateX(0px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(calc(100vh + 30px)) translateX(var(--chainlink-angle, -80vw));
+    opacity: 0;
+  }
+}
+
+/* Rain Coin Styling - Crisp borders for realistic appearance */
+.rain-coin {
+  /* Crisp borders and realistic coin appearance */
+  border-style: solid;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+  
+  /* Remove any blur for crisp appearance */
+  filter: none;
+}
+
+/* Smooth transitions for angle changes */
+:root {
+  transition: --native-angle 3s ease-in-out, --chainlink-angle 3s ease-in-out;
+}
+
+/* Star Wars Perspective Container */
+.starwars-container {
+  perspective: 1000px;
+  perspective-origin: 50% 20%;
+  transform-style: preserve-3d;
+}
+
+/* Clean title styling */
+.starwars-title {
+  font-family: 'Inter Tight', system-ui, -apple-system, sans-serif;
+  color: white;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Enhanced starfield background for deep space effect */
+.starfield-background {
+  position: relative;
+  overflow: hidden;
+}
+
+.starfield-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(2px 2px at 160px 30px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 200px 60px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 230px 20px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(2px 2px at 270px 90px, rgba(255, 255, 255, 0.7), transparent);
+  background-size: 300px 300px;
+  animation: starfield-twinkle 10s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes starfield-twinkle {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* Drip success animation - no blinking */
+@keyframes drip-success {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  25% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.3);
+  }
+  50% {
+    transform: scale(1);
+    box-shadow: 0 0 0 16px rgba(34, 197, 94, 0.1);
+  }
+  75% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.2);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.animate-drip-success {
+  animation: drip-success 0.8s ease-out;
+}
+
+/* Enhanced tooltip positioning */
+.tooltip-enhanced {
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+/* Fuel button enhanced styling */
+.fuel-button-enhanced {
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fuel-button-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.fuel-button-enhanced:hover::before {
+  left: 100%;
+}
+
+/* Natural Focus Animations */
+.focus-natural {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+}
+
+.focus-natural:focus,
+.focus-natural:focus-visible {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 0 0 3px rgba(255, 255, 255, 0.15),
+    0 0 20px rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.focus-natural:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transform: translateY(-0.5px);
+}
+
+/* CTA Button Animation - Apply drip effect to all CTAs */
+@keyframes cta-click {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  25% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    transform: scale(1);
+    box-shadow: 0 0 0 16px rgba(255, 255, 255, 0.1);
+  }
+  75% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.animate-cta-click {
+  animation: cta-click 0.8s ease-out;
+}
+
+/* Enhanced CTA Button Base Style */
+.cta-enhanced {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.cta-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.cta-enhanced:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cta-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.cta-enhanced:hover::before {
+  left: 100%;
+}
+
+/* Green CTA variant for gas-free actions */
+.cta-enhanced.cta-green {
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+.cta-enhanced.cta-green:hover {
+  border-color: rgba(34, 197, 94, 0.8);
+}
+
+.cta-enhanced.cta-green::before {
+  background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.2), transparent);
+}
+
+/* Main page Get First MON button - green border and text, fill green on hover */
+.cta-green {
+  border: 2px solid #10b981 !important;
+  color: #10b981 !important;
+  background: transparent !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cta-green:hover {
+  background: #10b981 !important;
+  color: white !important;
+  border-color: #10b981 !important;
+}
+
+/* Admin Withdraw MON button - red border and text, fill red on hover */
+.cta-red {
+  border: 2px solid #ef4444 !important;
+  color: #ef4444 !important;
+  background: transparent !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cta-red:hover {
+  background: #ef4444 !important;
+  color: white !important;
+  border-color: #ef4444 !important;
+}
+
+/* Fuel CTA variant for refuel actions */
+.cta-enhanced.cta-fuel {
+  border-color: rgba(251, 146, 60, 0.6);
+}
+
+.cta-enhanced.cta-fuel:hover {
+  border-color: rgba(251, 146, 60, 0.8);
+}
+
+.cta-enhanced.cta-fuel::before {
+  background: linear-gradient(90deg, transparent, rgba(251, 146, 60, 0.2), transparent);
+}
+
+/* Override: remove border on small icon-only buttons (e.g., close ✕ buttons) */
+button.h-5.w-5,
+button.h-5.w-5.cta-enhanced {
+  border: 0 !important;
+}

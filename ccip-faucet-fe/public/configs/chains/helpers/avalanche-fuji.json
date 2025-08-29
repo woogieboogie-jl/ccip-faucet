@@ -1,0 +1,18 @@
+{
+  "chainId": 43113,
+  "name": "Avalanche Fuji",
+  "rpcUrl": "${AVALANCHE_FUJI_RPC_URL}",
+  "explorerUrl": "https://testnet.snowtrace.io",
+  "themeColor": "#E84142",
+  
+  "common": {
+    "linkToken": "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846",
+    "ccipRouter": "0xF694E193200268f9a4868e4Aa017A0118C9a8177",
+    "chainSelector": "14767482510784806043"
+  },
+  
+  "contracts": {
+    "helper": "0x17b17859e210f5Da50849F5fBf2548b00036c636",
+    "volatilityFeed": "0x89983A2FDd082FA40d8062BCE3986Fc601D2d29B"
+  }
+} 

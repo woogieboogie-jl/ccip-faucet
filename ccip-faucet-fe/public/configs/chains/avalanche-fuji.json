@@ -1,0 +1,27 @@
+{
+  "chainId": 43113,
+  "name": "Avalanche Fuji",
+  "ticker": "AVAX",
+  "rpcUrl": "${AVALANCHE_FUJI_RPC_URL}",
+  "explorerUrl": "https://testnet.snowtrace.io",
+  "themeColor": "#E84142",
+  "gradientIntensity": 0.7,
+  "common": {
+    "linkToken": "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846",
+    "ccipRouter": "0xF694E193200268f9a4868e4Aa017A0118C9a8177",
+    "chainSelector": "14767482510784806043"
+  },
+  "contracts": {
+    "faucet": "0x2F0C3aa758C769f02e28890F92BFA67Bc3A65648"
+  },
+  "ccip": {
+    "helperChain": "avalanche-fuji"
+  },
+  "accountAbstraction": {
+    "networkName": "avalanche-fuji",
+    "entryPointAddress": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+    "factoryAddress": "0x4fed0a5b65eac383d36e65733786386709b86be8",
+    "bundlerUrl": "https://api.pimlico.io/v2/avalanche-fuji/rpc?apikey=${PIMLICO_API_KEY}",
+    "paymasterUrl": "https://api.pimlico.io/v2/avalanche-fuji/rpc?apikey=${PIMLICO_API_KEY}"
+  }
+}

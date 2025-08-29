@@ -1,0 +1,69 @@
+{
+  "minimal": {
+    "chains": [
+      {
+        "id": 1,
+        "name": "Loading...",
+        "network": "loading",
+        "nativeCurrency": {
+          "name": "Loading",
+          "symbol": "LOAD",
+          "decimals": 18
+        },
+        "rpcUrls": {
+          "default": {
+            "http": ["https://placeholder.com"]
+          },
+          "public": {
+            "http": ["https://placeholder.com"]
+          }
+        },
+        "blockExplorers": {
+          "default": {
+            "name": "Loading",
+            "url": "https://placeholder.com"
+          }
+        }
+      }
+    ],
+    "connectors": [],
+    "transports": {
+      "1": "http"
+    }
+  },
+  "template": {
+    "description": "Template for adding new chains to the faucet",
+    "example": {
+      "chains": [
+        {
+          "id": 1337,
+          "name": "Example Chain",
+          "network": "example",
+          "nativeCurrency": {
+            "name": "Example Token",
+            "symbol": "EXT",
+            "decimals": 18
+          },
+          "rpcUrls": {
+            "default": {
+              "http": ["https://rpc.example.com"]
+            },
+            "public": {
+              "http": ["https://rpc.example.com"]
+            }
+          },
+          "blockExplorers": {
+            "default": {
+              "name": "Example Explorer",
+              "url": "https://explorer.example.com"
+            }
+          }
+        }
+      ],
+      "connectors": ["injected", "walletConnect", "coinbaseWallet"],
+      "transports": {
+        "1337": "http"
+      }
+    }
+  }
+} 
