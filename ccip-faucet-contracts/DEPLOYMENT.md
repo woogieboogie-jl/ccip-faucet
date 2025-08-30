@@ -4,13 +4,26 @@ This guide explains how to deploy the Faucet contract to different chains using 
 
 ## Prerequisites
 
-1. **Environment Variables (secrets only):**
+1. **Environment Variables (unified .env system):**
+   
+   **🔧 Important**: This project uses a **unified .env system** where the root `.env` file is shared between contracts and frontend via symlink.
+   
    ```bash
+   # Create/edit the root .env file (shared between contracts and frontend)
+   cd ccip-faucet  # Go to project root
+   cp .env.example .env
+   
+   # Fill in your environment variables:
    export FAUCET_PRIVATE_KEY="your_private_key_here"
    export ETHEREUM_SEPOLIA_RPC_URL="your_sepolia_rpc_url"
    export MONAD_TESTNET_RPC_URL="your_monad_rpc_url"
    export AVALANCHE_FUJI_RPC_URL="your_fuji_rpc_url"
+   export PIMLICO_API_KEY="your_pimlico_api_key"
+   export WALLETCONNECT_PROJECT_ID="your_walletconnect_project_id"
+   export POLICY_ID="your_policy_id"
    ```
+   
+   **Note**: Variables like `WALLETCONNECT_PROJECT_ID` are automatically converted to `VITE_WALLETCONNECT_PROJECT_ID` for frontend access.
 
 2. **Chain Configurations (single source of truth):**
    - Config files are located in `../ccip-faucet-fe/public/configs/chains/`

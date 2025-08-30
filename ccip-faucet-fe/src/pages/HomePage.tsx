@@ -20,6 +20,7 @@ import { configService } from "@/lib/config"
 import { getAddresses } from "@/lib/config"
 import { createConfigDrivenPublicClient } from "@/lib/config/chain/viem-client"
 import { cachedContractRead } from "@/lib/request-cache"
+import { configLoader } from "@/lib/config/core/loader"
 import type { DerivedConfig } from '@/lib/types/config'
 
 export function HomePage() {
@@ -29,6 +30,8 @@ export function HomePage() {
   const [monBalance, setMonBalance] = useState(0)
   const [linkBalance, setLinkBalance] = useState(0)
   const [derivedConfig, setDerivedConfig] = useState<DerivedConfig | null>(null)
+  const [activeChainName, setActiveChainName] = useState<string | null>(null)
+  const [hasWallet, setHasWallet] = useState(false)
   
   // Admin panel state management
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false)
@@ -59,6 +62,23 @@ export function HomePage() {
   useEffect(() => {
     setCCIPNotificationFunctions(showSuccess, showError, showInfo, showWarning)
   }, [showSuccess, showError, showInfo, showWarning])
+
+  // 🎯 Detect wallet availability on mount
+  useEffect(() => {
+    const checkWallet = () => {
+      const walletAvailable = typeof window !== 'undefined' && !!window.ethereum
+      setHasWallet(walletAvailable)
+      console.log('👛 Wallet detection:', walletAvailable ? 'Found' : 'Not found')
+    }
+    
+    checkWallet()
+    
+    // Also check when window loads (in case wallet extension loads late)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('load', checkWallet)
+      return () => window.removeEventListener('load', checkWallet)
+    }
+  }, [])
   
   // Log event-driven updates status and connect to notifications
   useEffect(() => {
@@ -68,29 +88,51 @@ export function HomePage() {
     // } // This line is removed
   }, []) // This line is removed
 
-  // Load derived config on mount and when chain changes
+  // 🎯 CONSOLIDATED: Track active chain changes with polling
+  useEffect(() => {
+    const checkActiveChain = () => {
+      const currentActiveChain = configLoader.getActiveChainName()
+      if (currentActiveChain !== activeChainName) {
+        console.log(`🔄 HomePage: Active chain changed from ${activeChainName} to ${currentActiveChain}`)
+        setActiveChainName(currentActiveChain)
+      }
+    }
+
+    // Check immediately and then poll every 100ms for changes
+    checkActiveChain()
+    const interval = setInterval(checkActiveChain, 100)
+    
+    return () => clearInterval(interval)
+  }, [activeChainName])
+
+  // Load derived config when active chain changes
   useEffect(() => {
     const loadConfig = async () => {
       try {
         const config = await configService.getActiveChainConfig()
         setDerivedConfig(config.derivedConfig)
+        
         console.log(`🎨 HomePage: Updated derivedConfig for ${config.derivedConfig.nativeName}`)
         console.log(`🔍 HomePage: Chain config details:`, {
           chainName: config.chainConfig.name,
           ticker: config.chainConfig.ticker,
           nativeTokenIcon: config.derivedConfig.nativeTokenIcon,
-          chainId: config.chainConfig.chainId
+          chainId: config.chainConfig.chainId,
+          activeChainName
         })
       } catch (error) {
         console.error('Failed to load derived config:', error)
       }
     }
     
-    loadConfig()
+    // Only load config if we have an active chain name
+    if (activeChainName !== null) {
+      loadConfig()
+    }
 
-    // HYBRID: Listen for chain changes to reload config for ticker updates
+    // Listen for wallet chain changes to reload config for ticker updates
     const handleChainChange = (chainId: string) => {
-      console.log('🔄 HomePage: Chain changed to:', chainId, 'reloading config...')
+      console.log('🔄 HomePage: Wallet chain changed to:', chainId, 'reloading config...')
       // Add delay to ensure consolidated pipeline + theme loading completes first
       setTimeout(() => {
         console.log('🔄 HomePage: Executing delayed config reload...')
@@ -98,15 +140,15 @@ export function HomePage() {
       }, 300) // Wait for consolidated pipeline + theme loading
     }
 
-    // HYBRID: Restore config-focused chain listener for ticker updates
-    // This complements the consolidated pipeline by handling UI-specific config state
+    // Listen for wallet chain changes only
     if (typeof window !== 'undefined' && (window as any).ethereum) {
       (window as any).ethereum.on('chainChanged', handleChainChange)
+      
       return () => {
         (window as any).ethereum?.removeListener('chainChanged', handleChainChange)
       }
     }
-  }, [])
+  }, [activeChainName]) // 🎯 CONSOLIDATED: Re-run when activeChainName changes
 
   // Mock fetchVolatilityData for backward compatibility (not used in current flow)
   const fetchVolatilityData = async () => {
@@ -164,9 +206,28 @@ export function HomePage() {
 
     fetchBalances()
 
+    // OPTIMIZED: Only fetch balances when page is visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchBalances()
+      }
+    }
+
     // OPTIMIZED: Increased interval from 30s to 60s since we have caching
-    const interval = setInterval(fetchBalances, 60000)
-    return () => clearInterval(interval)
+    const interval = setInterval(() => {
+      // Only fetch if page is visible
+      if (!document.hidden) {
+        fetchBalances()
+      }
+    }, 60000)
+
+    // Listen for visibility changes to refresh when user returns
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [address, isConnected, derivedConfig?.nativeName]) // 🆕 Re-fetch when chain changes
 
   // Mock wallet state for compatibility with existing components
@@ -274,10 +335,25 @@ export function HomePage() {
   }
 
   const connectWallet = async () => {
+    // 🎯 Check wallet availability first
+    if (!hasWallet) {
+      showInfo(
+        'Wallet Required', 
+        'Please install MetaMask or another Web3 wallet to connect to the faucet',
+        5000
+      )
+      return
+    }
+
     // Connect with the first available connector (usually MetaMask/Injected)
     const connector = connectors[0]
     if (connector) {
-      connect({ connector })
+      try {
+        await connect({ connector })
+      } catch (error) {
+        console.error('Failed to connect wallet:', error)
+        showError('Connection Failed', 'Unable to connect to your wallet. Please try again.')
+      }
     }
   }
 
@@ -328,6 +404,7 @@ export function HomePage() {
       <Header
         wallet={walletState}
         isConnecting={isPending}
+        hasWallet={hasWallet}
         onConnect={connectWallet}
         onDisconnect={disconnectWallet}
         truncateAddress={truncateAddress}

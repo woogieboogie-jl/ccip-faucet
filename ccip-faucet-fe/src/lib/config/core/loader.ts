@@ -302,14 +302,20 @@ export class ConfigLoader {
       invalidateAllFaucetCache() // 🆕 Clear RPC cache too!
       clearFaucetClientCache() // 🆕 Clear cached faucet address too!
       
-      // Clear Zustand address state and reload
+      // 🎯 SIMPLE: Clear cooldowns on chain switch + reload addresses
       try {
         const { useFaucetStore } = await import('../../../store/faucet-store')
         const store = useFaucetStore.getState()
+        
+        // Clear cooldowns for fresh start on new chain
+        store.updateTokenState('active', { dripCooldownTime: 0, requestCooldownTime: 0 })
+        store.updateTokenState('link', { dripCooldownTime: 0, requestCooldownTime: 0 })
+        console.log('🔄 Cooldowns cleared for chain switch')
+        
+        // Clear addresses and reload for new chain
         store.clearAddresses()
-        // Reload addresses for new chain
         await store.loadAddresses()
-        console.log('🏪 Zustand address state cleared and reloaded')
+        console.log('🏪 Addresses cleared and reloaded for new chain')
         
         // 🆕 CONSOLIDATION: Trigger faucet data refresh via existing hook mechanism
         // This ensures we use the established data flow instead of duplicating logic

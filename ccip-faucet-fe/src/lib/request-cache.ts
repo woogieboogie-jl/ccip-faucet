@@ -19,6 +19,42 @@ class RequestCache {
   
   // Default cache duration: 30 seconds
   private defaultTTL = 30 * 1000
+  
+  // Tiered cache durations for different data types
+  private cacheTiers = {
+    // Static/semi-static data - cache longer
+    constants: 5 * 60 * 1000,      // 5 minutes (cooldown, thresholdFactor)
+    treasury: 45 * 1000,           // 45 seconds (vault balances)
+    
+    // Dynamic data - shorter cache
+    userBalances: 30 * 1000,       // 30 seconds (user balances)
+    tankStatus: 20 * 1000,         // 20 seconds (tank pools, drip rates)
+    
+    // Very dynamic data - minimal cache
+    transactions: 10 * 1000,       // 10 seconds (pending transactions)
+  }
+
+  /**
+   * Get appropriate TTL based on function name
+   */
+  private getTTLForFunction(functionName: string): number {
+    if (functionName.includes('COOLDOWN') || functionName.includes('thresholdFactor')) {
+      return this.cacheTiers.constants
+    }
+    if (functionName.includes('Treasury') || functionName.includes('treasury')) {
+      return this.cacheTiers.treasury
+    }
+    if (functionName.includes('Balance') || functionName.includes('balance')) {
+      return this.cacheTiers.userBalances
+    }
+    if (functionName.includes('Reservoir') || functionName.includes('tank')) {
+      return this.cacheTiers.tankStatus
+    }
+    if (functionName.includes('transaction') || functionName.includes('tx')) {
+      return this.cacheTiers.transactions
+    }
+    return this.defaultTTL
+  }
 
   /**
    * Generate cache key from function name and arguments
@@ -70,8 +106,10 @@ class RequestCache {
     functionName: string,
     fn: () => Promise<T>,
     args: any[] = [],
-    ttl: number = this.defaultTTL
+    ttl?: number
   ): Promise<T> {
+    // Use smart TTL if not explicitly provided
+    const cacheTTL = ttl ?? this.getTTLForFunction(functionName)
     const key = this.generateKey(functionName, args)
     const now = Date.now()
     
@@ -103,7 +141,7 @@ class RequestCache {
     if (process.env.NODE_ENV === 'development') {
       console.log(`🔄 Cache miss: ${functionName}`, { 
         reason: !cached ? 'not_found' : 'expired',
-        ttl: Math.round(ttl / 1000) + 's'
+        ttl: Math.round(cacheTTL / 1000) + 's'
       })
     }
     
@@ -124,7 +162,7 @@ class RequestCache {
       this.cache.set(key, {
         data: result,
         timestamp: now,
-        expiresAt: now + ttl,
+        expiresAt: now + cacheTTL,
         isLoading: false,
       })
       

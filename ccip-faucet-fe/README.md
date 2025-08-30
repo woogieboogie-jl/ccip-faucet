@@ -174,11 +174,23 @@ const { client: helperClient } = useHelperPublicClient()
 ## 🔧 Configuration
 
 ### Environment Variables
+
+**🔧 Unified .env System**: This project uses a unified environment system where variables are automatically prefixed with `VITE_` for frontend access.
+
 ```bash
-VITE_WALLETCONNECT_PROJECT_ID=your_project_id
-VITE_INFURA_API_KEY=your_infura_key
-VITE_ALCHEMY_API_KEY=your_alchemy_key
+# The .env file is located in the project root and symlinked to frontend
+# Variables are automatically converted:
+WALLETCONNECT_PROJECT_ID=your_project_id  # → VITE_WALLETCONNECT_PROJECT_ID
+PIMLICO_API_KEY=your_pimlico_key          # → VITE_PIMLICO_API_KEY
+MONAD_TESTNET_RPC_URL=your_monad_rpc      # → VITE_MONAD_TESTNET_RPC_URL
+AVALANCHE_FUJI_RPC_URL=your_fuji_rpc      # → VITE_AVALANCHE_FUJI_RPC_URL
+POLICY_ID=your_policy_id                  # → VITE_POLICY_ID
 ```
+
+**Setup Instructions:**
+1. Copy `.env.example` to `.env` in the project root
+2. Fill in your API keys and RPC URLs (without VITE_ prefix)
+3. The build system automatically creates VITE_ prefixed versions for frontend access
 
 ### Supported Networks
 - **Monad Testnet** (Chain ID: 10143) - Primary deployment

@@ -173,11 +173,12 @@ export function useRainbowKitNetworkSwitch() {
         currentChainId: actualChainId,
       }))
     } else {
+      // For disconnected users, show current app chain as "selected"
       setState(prev => ({
         ...prev,
         isWrongNetwork: false,
         isUnsupportedNetwork: false,
-        currentChainId: undefined,
+        currentChainId: activeChain?.id, // Show current app chain
       }))
     }
   }, [isConnected, fallbackChainId, walletClient, activeChain, supportedChainIds])
@@ -216,8 +217,30 @@ export function useRainbowKitNetworkSwitch() {
   // Network switching function
   const handleSwitchNetwork = async (chainId: number) => {
     if (!isConnected) {
-      // If not connected, just open modal to show available chains
-      setState(prev => ({ ...prev, isModalOpen: true }))
+      // For disconnected users, allow "preview" chain switching
+      try {
+        const chainName = await configLoader.mapChainIdToName(chainId)
+        if (chainName) {
+          console.log(`🔄 Preview mode: Switching to ${chainName} (${chainId})`)
+          await configLoader.setActiveChain(chainName)
+          
+          // Update active chain state to reflect the new chain
+          const newActiveChain = await getActiveChain()
+          setActiveChain(newActiveChain)
+          
+          setState(prev => ({
+            ...prev,
+            currentChainId: chainId,
+            targetChainId: chainId,
+            targetChainName: newActiveChain.name,
+            isModalOpen: false, // Close modal after selection
+          }))
+          
+          console.log(`✅ Preview mode: Successfully switched to ${chainName}`)
+        }
+      } catch (error) {
+        console.error('Failed to switch chain in preview mode:', error)
+      }
       return
     }
 

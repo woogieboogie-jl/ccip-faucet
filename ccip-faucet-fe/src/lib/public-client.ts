@@ -55,6 +55,22 @@ export class PublicClientService {
     console.log('🧹 Clearing client cache...')
     this.clients.clear()
   }
+
+  /**
+   * Smart cache invalidation - only clear specific chain clients
+   */
+  clearChainCache(chainId?: number): void {
+    if (chainId) {
+      const key = chainId.toString()
+      this.clients.delete(key)
+      console.log(`🧹 Cleared client cache for chain ${chainId}`)
+    } else {
+      // Clear active and helper clients for chain switches
+      this.clients.delete('active')
+      this.clients.delete('helper')
+      console.log('🧹 Cleared active and helper client cache')
+    }
+  }
   
   /**
    * Get client by chain ID (for future extensibility)

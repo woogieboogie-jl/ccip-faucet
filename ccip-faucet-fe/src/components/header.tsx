@@ -41,6 +41,7 @@ interface VolatilityData {
 interface HeaderProps {
   wallet: WalletState
   isConnecting: boolean
+  hasWallet: boolean
   onConnect: () => void
   onDisconnect: () => void
   truncateAddress: (address: string) => string
@@ -55,6 +56,7 @@ interface HeaderProps {
 export function Header({
   wallet,
   isConnecting,
+  hasWallet,
   onConnect,
   onDisconnect,
   truncateAddress,
@@ -319,13 +321,22 @@ export function Header({
               /* Not Connected State - Simple Login Button */
               <button
                 onClick={onConnect}
-                disabled={isConnecting}
-                className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/20 rounded-lg px-4 py-2 transition-colors h-8"
+                disabled={isConnecting || !hasWallet}
+                className={`flex items-center space-x-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg px-4 py-2 transition-colors h-8 ${
+                  !hasWallet || isConnecting 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-white/20 cursor-pointer'
+                }`}
               >
                 <LogIn className="h-4 w-4 text-white/80" />
                 <span className="font-body text-white/90 text-sm font-medium">
-                  {isConnecting ? 'Connecting...' : 'Connect'}
-                    </span>
+                  {isConnecting 
+                    ? 'Connecting...' 
+                    : hasWallet 
+                      ? 'Connect' 
+                      : 'Connect (No Wallet)'
+                  }
+                </span>
               </button>
             )}
             
