@@ -1,0 +1,175 @@
+1. For Solana (using Rust with the Anchor Framework)
+Solana's architecture is account-based, which is very different from the EVM. State (like owner, cooldown, reservoir balances) is not stored inside the program itself but in separate data accounts. The Anchor framework makes this much easier to manage.
+
+This skeleton lays out the necessary program accounts and instruction handlers.
+
+faucet/src/lib.rs
+
+Rust
+
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::system_program;
+
+// This would be the program's unique ID after deployment
+declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+
+// Main Program Logic
+#[program]
+pub mod faucet {
+    use super::*;
+
+    // This function initializes the main configuration for the faucet.
+    // It's the equivalent of the EVM constructor.
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        cooldown: i64,
+        helper_chain_selector: u64,
+        base_native_drip: u64,
+        base_link_drip: u64,
+    ) -> Result<()> {
+        // TODO: Set the initial values in the config and reservoir accounts
+        // - ctx.accounts.config.owner = *ctx.accounts.owner.key;
+        // - ctx.accounts.config.cooldown = cooldown;
+        // - ctx.accounts.native_reservoir.drip_rate = base_native_drip;
+        // - etc.
+        Ok(())
+    }
+
+    // Admin function to whitelist a helper contract for a given chain
+    pub fn add_chain(ctx: Context<UpdateConfig>, selector: u64, helper: Pubkey) -> Result<()> {
+        // TODO: Implement the logic for addChain()
+        // - require!(ctx.accounts.owner.key() == ctx.accounts.config.owner, CustomError::Unauthorized);
+        // - ctx.accounts.config.trusted_senders.insert(selector, helper);
+        Ok(())
+    }
+
+    // User-facing function to request native tokens
+    pub fn request_native_tokens(ctx: Context<Drip>) -> Result<()> {
+        // TODO: Implement the logic from _dripNative() or _dripNativeTo()
+        // 1. Check cooldown using the user_last_claim account.
+        // 2. Check if native_reservoir has enough funds.
+        // 3. Decrement reservoir balance.
+        // 4. Update user_last_claim.last_claim_timestamp.
+        // 5. Transfer native tokens (SOL) to the user.
+        Ok(())
+    }
+
+    // Public function to trigger the refill check
+    pub fn trigger_refill_check(ctx: Context<TriggerRefill>) -> Result<()> {
+        // TODO: Implement the full logic from triggerRefillCheck()
+        // 1. Read native_reservoir and link_reservoir to see if they are below threshold.
+        // 2. Check the config.refill_in_progress flag.
+        // 3. Get the helper address from config.trusted_senders.
+        // 4. Perform the "magic switch":
+        //    - Make a CPI call to the helper address to check if it's a Price Feed (this is complex on Solana).
+        //    - If it is, handle same-chain refill (CPI to Price Feed).
+        //    - If not, handle cross-chain refill (CPI to the CCIP Router Program).
+        Ok(())
+    }
+
+    // Callback function for receiving a CCIP message
+    pub fn ccip_receive(ctx: Context<CcipReceive>, message: Any2EVMMessage) -> Result<()> {
+        // TODO: Implement the logic from _ccipReceive()
+        // 1. Secure this instruction to ensure only the CCIP Off-Ramp program can call it.
+        // 2. Check message.source_chain_selector against config.helper_chain_selector.
+        // 3. Decode the sender and check against config.trusted_senders.
+        // 4. Decode the data (volatility score).
+        // 5. Call the shared logic equivalent of _applyVolatilityAndRefill().
+        Ok(())
+    }
+}
+
+// --- Account Structures (State Management) ---
+
+// Main configuration account for the faucet (singleton PDA)
+#[account]
+pub struct Config {
+    pub owner: Pubkey,
+    pub cooldown: i64, // Using i64 for timestamps
+    pub refill_in_progress: bool,
+    pub helper_chain_selector: u64,
+    // Solidity's mapping translates to a BTreeMap or HashMap.
+    // For on-chain use, a BTreeMap is often preferred.
+    pub trusted_senders: std::collections::BTreeMap<u64, Pubkey>,
+}
+
+// Account to store reservoir data for a specific token
+#[account]
+pub struct ReservoirAccount {
+    pub dispensable_pool: u64,
+    pub drip_rate: u64,
+}
+
+// Account to store the last claim time for a specific user (one PDA per user)
+// This is a Solana-native way to handle per-user data efficiently.
+#[account]
+pub struct UserLastClaim {
+    pub last_claim_timestamp: i64,
+}
+
+// --- Instruction Contexts (Function Arguments) ---
+
+#[derive(Accounts)]
+pub struct Initialize<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+    #[account(init, payer = owner, space = 8 + 1024, seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
+    #[account(init, payer = owner, space = 8 + 16, seeds = [b"native_reservoir"], bump)]
+    pub native_reservoir: Account<'info, ReservoirAccount>,
+    #[account(init, payer = owner, space = 8 + 16, seeds = [b"link_reservoir"], bump)]
+    pub link_reservoir: Account<'info, ReservoirAccount>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateConfig<'info> {
+    pub owner: Signer<'info>,
+    #[account(mut, has_one = owner)]
+    pub config: Account<'info, Config>,
+}
+
+#[derive(Accounts)]
+pub struct Drip<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
+    #[account(mut, seeds = [b"native_reservoir"], bump)]
+    pub native_reservoir: Account<'info, ReservoirAccount>,
+    #[account(
+        init_if_needed,
+        payer = user,
+        space = 8 + 8,
+        seeds = [b"last_claim", user.key().as_ref()],
+        bump
+    )]
+    pub user_last_claim: Account<'info, UserLastClaim>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct TriggerRefill<'info> {
+    // TODO: Define all the accounts needed for the CPI calls
+    // This will include the config, reservoirs, and accounts for the
+    // CCIP router program and/or the Chainlink Price Feed program.
+}
+
+#[derive(Accounts)]
+pub struct CcipReceive<'info> {
+    // TODO: Define the accounts for the CCIP callback.
+    // This requires specific accounts to authenticate the caller as the
+    // official CCIP Off-Ramp program.
+}
+
+// --- Other Definitions ---
+
+// Placeholder struct for the CCIP message
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct Any2EVMMessage {
+    // TODO: Define the fields based on CCIP's Solana specification
+    pub source_chain_selector: u64,
+    pub sender: Vec<u8>,
+    pub data: Vec<u8>,
+}
+

@@ -1,0 +1,95 @@
+Of course. That is an excellent point to clarify the primary educational purpose of the document. I have updated the introduction to reflect this.
+
+Here is the complete guide with the new introduction at the top.
+
+---
+
+## **Porting Guide: EVM Faucet to Solana and TON**
+
+### **1. Introduction & Goal**
+
+This document provides a conceptual blueprint for porting `Faucet.sol`, an existing EVM-based smart contract, to the Solana and TON blockchain ecosystems. **The primary purpose of this exercise is to provide a hands-on learning experience for a developer to get used to the Solana (Rust/Anchor) and TON (FunC/TACT) developer environments.** By translating a non-trivial contract with complex logic, the user will gain practical expertise in the architectural patterns and development paradigms of these new platforms.
+
+This guide explains the `Faucet.sol` contract's purpose, its core logic, and its implementation in Solidity, enabling a developer or AI agent to accurately translate its functionality.
+
+### **2. Core Technologies Overview**
+
+#### **2.1 Chainlink CCIP (Cross-Chain Interoperability Protocol)**
+
+Chainlink CCIP is a protocol that enables smart contracts to send and receive messages and/or tokens across different blockchains. In the context of this project, it is used as one of two methods to fetch external data (market volatility) from another chain. The key components in the EVM implementation are:
+
+* **Router Contract:** The on-chain entry point for sending a CCIP message.
+* **`ccipSend()`:** The function called on the Router to dispatch a message.
+* **`_ccipReceive()`:** The callback function in a `CCIPReceiver` contract that is triggered on the destination chain when a message arrives.
+
+#### **2.2 The `Faucet.sol` Contract**
+
+The primary purpose of `Faucet.sol` is to distribute testnet tokens (a native token and LINK) to users. Its key functionalities are:
+
+* **Token Dispensing:** Allows users to request a "drip" of tokens.
+* **Fund Management:** Separates funds into a main "Treasury" and a limited "Reservoir" for dispensing, enhancing security.
+* **Dynamic Drip Rates:** The amount of tokens dispensed is not fixed. It is adjusted based on a "volatility score" fetched from an external source.
+* **Dual-Mode Data Fetching:** The contract can obtain the volatility score via two distinct methods, chosen automatically at runtime.
+
+### **3. Architectural Deep Dive (EVM Implementation)**
+
+This section details *how* the `Faucet.sol` contract is implemented in Solidity.
+
+#### **3.1 State Management**
+
+The contract's state is managed through several key variables and mappings:
+
+* **`Reservoir` Structs:** Two instances (`nativeRes`, `linkRes`) hold the `dispensablePool` and `dripRate` for each token.
+* **`trustedSenders` Mapping:** A `mapping(uint64 => address)` that whitelists trusted data sources. The `uint64` key is a chain selector ID, and the `address` is the contract address of the data source (either a `VolatilityHelper` on another chain or a Price Feed on the same chain).
+* **`refillInProgress` Mutex:** A `bool` flag that prevents multiple simultaneous refill operations from being triggered.
+* **Cooldown Mappings:** `mapping(address => uint256)` for `lastClaimNative` and `lastClaimLink` to enforce a time limit between drips for each user.
+
+#### **3.2 Core User-Facing Logic (Dripping)**
+
+The functions `requestNativeTokens()` and `requestLinkTokens()` serve as the public entry points for users. They call internal `_drip` functions that perform the core logic:
+1.  Check if the user's cooldown period has passed.
+2.  Check if the `dispensablePool` in the corresponding reservoir has sufficient funds.
+3.  Decrement the pool, update the user's last claim timestamp, and transfer the tokens.
+
+#### **3.3 The Dual-Mode Refill Mechanism**
+
+This is the most complex and innovative feature of the contract. The `triggerRefillCheck()` function acts as a smart router to update the `dripRate` based on market volatility.
+
+1.  **Detection:** It first retrieves the data source address from the `trustedSenders` mapping. It then calls `_isVolatilityFeed()`, which uses a `try/catch` on a `latestRoundData()` call to determine if the address is a Chainlink Price Feed.
+2.  **Mode A: Cross-Chain (CCIP):** If the address is *not* a Price Feed, the contract assumes it's a cross-chain `VolatilityHelper`.
+    * It constructs a `Client.EVM2AnyMessage` struct with an empty `data` payload.
+    * It calls `router.ccipSend()` to dispatch the message to the helper chain.
+    * The system then waits for the helper to send a message back, which is asynchronously handled by the `_ccipReceive()` function.
+3.  **Mode B: Same-Chain (Direct Read):** If the address *is* a Price Feed, the contract executes its same-chain logic.
+    * It directly calls `latestRoundData()` on the Price Feed address.
+    * It processes the returned price into a 0-1000 volatility score.
+    * It then calls the shared logic function to apply the update.
+
+#### **3.4 Shared Logic & Code Reusability**
+
+To avoid code duplication, the core logic for processing the volatility score and refilling the reservoirs is extracted into a single internal function: `_applyVolatilityAndRefill()`. This function is called by both the `_ccipReceive()` callback (for cross-chain mode) and the `_handleSameChainRefill()` function (for same-chain mode), ensuring consistent behavior regardless of the data source.
+
+#### **3.5 Administrative Functions**
+
+The contract inherits from OpenZeppelin's `Ownable` and provides several `onlyOwner` functions (`addChain`, `setCooldown`, `setThresholdFactor`, etc.) to allow for secure, post-deployment configuration and management.
+
+### **4. Porting Considerations & Guidance**
+
+When translating this contract, the agent should focus on finding platform-native equivalents for these EVM patterns.
+
+#### **4.1 For Solana (Rust / Anchor)**
+
+* **State:** Solidity's `mapping` and `struct` state variables will need to be translated into Solana's account model. The `trustedSenders` whitelist and `Reservoir` data, for instance, should be stored in one or more Program Derived Accounts (PDAs) owned by the Faucet program.
+* **Cross-Program Invocation (CPI):** Calls to other on-chain programs, such as the Chainlink Price Feed aggregator or the CCIP Router program, must be implemented using CPIs. The accounts required by these external programs must be passed into the Faucet's instruction context.
+* **Asynchronous Callbacks:** The `_ccipReceive()` function, which acts as a callback in the EVM, has a direct equivalent on Solana. The CCIP Off-Ramp program on Solana will call a specific instruction (e.g., `ccip_receive`) on the Faucet program. This instruction must be secured to ensure it can only be called by the authorized CCIP program.
+* **Ownership:** The `onlyOwner` modifier can be replicated using Anchor's account constraints by checking that the transaction's signer is the authorized `owner` stored in a configuration account (PDA).
+
+#### **4.2 For TON (FunC / TACT)**
+
+* **State:** State is stored in the contract's persistent data, typically held in the `c4` register. Solidity `mappings` can be implemented using Dictionaries (`dict`) in FunC/TACT. The `Reservoir` structs can be represented as tuples or custom structs stored in the contract's data cell.
+* **Messaging:** TON's architecture is fundamentally asynchronous and message-based.
+    * To initiate a cross-chain request (Mode A), the contract will need to send an external message formatted according to the specifications of the CCIP infrastructure on TON (Note: CCIP support on TON is a prerequisite and will have a specific SDK/interface).
+    * The `_ccipReceive()` callback will be handled by a specific message handler in the contract that processes incoming external messages from the CCIP infrastructure.
+    * Direct reads (Mode B) from another contract would involve sending an internal message and waiting for a response, which is an asynchronous process.
+* **Get-Methods:** Read-only `public view` functions in Solidity, like `getReservoirStatus`, translate directly to "get-methods" in FunC/TACT, which can read the contract's state without executing a transaction.
+* **Ownership:** The `onlyOwner` modifier is implemented inside message handlers by checking that the `sender_address` of the incoming message matches the owner's address stored in the contract's persistent data.
