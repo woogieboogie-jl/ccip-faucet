@@ -63,7 +63,6 @@ ccip-faucet/
 ├── turbo.json                   # Build orchestration
 ├── vercel.json                  # Deployment configuration
 ├── preflight-check.ts           # TypeScript pre-flight checks
-├── preflight-check.sh           # Shell script pre-flight checks
 └── README.md                    # This file
 ```
 
@@ -255,11 +254,11 @@ pnpm run test
 Before triggering CCIP operations, run comprehensive checks:
 
 ```bash
-# TypeScript version with detailed error reporting
+# TypeScript version with detailed error reporting and dynamic chain support
 pnpm run preflight
 
-# Shell script version using cast and jq
-./preflight-check.sh
+# Specify custom chains (optional)
+CHAIN_NAME=arbitrum-sepolia HELPER_NAME=avalanche-fuji pnpm run preflight
 ```
 
 The pre-flight scripts verify:

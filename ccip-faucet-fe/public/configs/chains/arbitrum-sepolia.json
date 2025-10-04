@@ -1,0 +1,32 @@
+{
+  "chainId": 421614,
+  "name": "Arbitrum Sepolia",
+  "ticker": "ETH",
+  "rpcUrl": "${ARBITRUM_SEPOLIA_RPC_URL}",
+  "explorerUrl": "https://sepolia.arbiscan.io",
+  "themeColor": "#28A0F0",
+  "gradientIntensity": 0.7,
+  
+  "common": {
+    "linkToken": "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E",
+    "ccipRouter": "0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165",
+    "chainSelector": "3478487238524512106"
+  },
+  
+  "contracts": {
+    "faucet": "0x9609BDE19d413DBaD67A5d707868F4D4E75734bf"
+  },
+  
+  "ccip": {
+    "helperChain": "avalanche-fuji"
+  },
+  
+  "accountAbstraction": {
+    "networkName": "arbitrum-sepolia",
+    "entryPointAddress": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+    "factoryAddress": "0x4fed0a5b65eac383d36e65733786386709b86be8",
+    "bundlerUrl": "https://api.pimlico.io/v2/arbitrum-sepolia/rpc?apikey=${PIMLICO_API_KEY}",
+    "paymasterUrl": "https://api.pimlico.io/v2/arbitrum-sepolia/rpc?apikey=${PIMLICO_API_KEY}"
+  }
+}
+
