@@ -12,7 +12,7 @@
     "chainSelector": "14767482510784806043"
   },
   "contracts": {
-    "faucet": "0x2F0C3aa758C769f02e28890F92BFA67Bc3A65648"
+    "faucet": "0x2823Fd9D08DCb2412Bc20F8DBC5985B3458854E7"
   },
   "ccip": {
     "helperChain": "avalanche-fuji"

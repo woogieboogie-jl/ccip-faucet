@@ -223,52 +223,18 @@ CHAIN_NAME=monad-testnet forge script TestConfig
 
 ## Contract Verification
 
-After successful deployment, verify your contracts on block explorers for transparency and easier interaction.
+After successful deployment, verify your contracts on Avalanche Fuji block explorer for transparency and easier interaction.
 
-### Verify Faucet Contract (Active Chains)
+### Verify Faucet Contract (Avalanche Fuji)
 
-**Monad Testnet (Sourcify):**
+**✅ Recommended: Use Snowtrace (works reliably)**
 ```bash
-# Get deployed address from JSON config
-export FAUCET_ADDR=$(jq -r '.contracts.faucet' ../ccip-faucet-fe/public/configs/chains/monad-testnet.json)
-
-# Verify on Monad using Sourcify
-forge verify-contract \
-  --rpc-url https://testnet-rpc.monad.xyz \
-  --verifier sourcify \
-  --verifier-url 'https://sourcify-api-monad.blockvision.org' \
-  $FAUCET_ADDR \
-  src/Faucet.sol:Faucet \
-  --flatten
-```
-
-**Ethereum Sepolia (Etherscan):**
-```bash
-# Get deployed address from JSON config
-export FAUCET_ADDR=$(jq -r '.contracts.faucet' ../ccip-faucet-fe/public/configs/chains/ethereum-sepolia.json)
-
-# Verify on Sepolia using Etherscan
-forge verify-contract \
-  --chain-id 11155111 \
-  --verifier etherscan \
-  --verifier-url "https://api-sepolia.etherscan.io/api" \
-  $FAUCET_ADDR \
-  src/Faucet.sol:Faucet \
-  --flatten \
-  --etherscan-api-key $ETHERSCAN_API_KEY
-```
-
-**Avalanche Fuji (Routescan):**
-```bash
-# Get deployed address from JSON config
-export FAUCET_ADDR=$(jq -r '.contracts.faucet' ../ccip-faucet-fe/public/configs/chains/avalanche-fuji.json)
-
-# Verify on Fuji using Routescan
+# Verify Faucet on Avalanche Fuji using Snowtrace API
 forge verify-contract \
   --chain-id 43113 \
   --verifier etherscan \
-  --verifier-url "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api" \
-  $FAUCET_ADDR \
+  --verifier-url "https://api.snowtrace.io/api" \
+  0x2F0C3aa758C769f02e28890F92BFA67Bc3A65648 \
   src/Faucet.sol:Faucet \
   --flatten \
   --etherscan-api-key "YourApiKeyToken"
@@ -276,55 +242,43 @@ forge verify-contract \
 
 ### Verify VolatilityHelper Contract (Avalanche Fuji)
 
+**✅ Works: Use Routescan**
 ```bash
-# Get deployed helper address from JSON config
-export HELPER_ADDR=$(jq -r '.contracts.helper' ../ccip-faucet-fe/public/configs/chains/helpers/avalanche-fuji.json)
-
 # Verify VolatilityHelper on Fuji using Routescan
 forge verify-contract \
   --chain-id 43113 \
   --verifier etherscan \
   --verifier-url "https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api" \
-  $HELPER_ADDR \
+  0x17b17859e210f5Da50849F5fBf2548b00036c636 \
   src/VolatilityHelper.sol:VolatilityHelper \
   --flatten \
   --etherscan-api-key "YourApiKeyToken"
 ```
 
-### Required API Keys
-
-Add these to your `.env` file for verification:
-
-```bash
-# For Ethereum Sepolia verification
-ETHERSCAN_API_KEY=your_etherscan_api_key
-
-# For Avalanche Fuji verification (Routescan)
-# Note: You can use "YourApiKeyToken" as a placeholder for Routescan
-```
-
 ### Verification Tips
 
 1. **Use `--flatten` flag**: Combines all imports into a single file for easier verification
-2. **JSON Config Integration**: Commands automatically read deployed addresses from your chain configs
-3. **Chain-Specific Verifiers**: Each chain uses its preferred verification service:
-   - **Monad**: Sourcify (no API key needed)
-   - **Ethereum Sepolia**: Etherscan (requires API key)
-   - **Avalanche Fuji**: Routescan (placeholder API key works)
-4. **Verification Status**: Check verification status on respective block explorers after running commands
+2. **Hardcoded Addresses**: Use actual contract addresses (JSON config extraction is deprecated)
+3. **API Compatibility**: 
+   - **Snowtrace**: Works reliably for Faucet contracts
+   - **Routescan**: Works for VolatilityHelper, may fail for Faucet
+4. **No Real API Key Needed**: "YourApiKeyToken" placeholder works for both services
 
 ### Troubleshooting Verification
 
+**✅ Tested Results:**
+- **"Contract already verified"**: ✅ Success - contract is already verified
+- **"Response: OK, GUID: xxx"**: ✅ Success - verification submitted successfully
+- **"Response result is unexpectedly empty"**: ❌ API issue - try Snowtrace instead
+
 **Common Issues:**
-- **"Contract already verified"**: Skip if already done
+- **Routescan API fails for Faucet**: Use Snowtrace API instead
 - **"Compilation failed"**: Ensure your Solidity version matches `foundry.toml`
-- **"Invalid API key"**: Check your API key in `.env` file
 - **"Bytecode mismatch"**: Ensure you're using the same compiler settings
 
 **Verification URLs:**
-- **Monad**: https://testnet-explorer.monad.xyz/
-- **Ethereum Sepolia**: https://sepolia.etherscan.io/
-- **Avalanche Fuji**: https://testnet.snowtrace.io/
+- **Avalanche Fuji (Snowtrace)**: https://testnet.snowtrace.io/
+- **Avalanche Fuji (Routescan)**: https://avalanche-fuji.blockscout.com/
 
 ## Architecture Notes
 

@@ -14,9 +14,11 @@ if (existsSync(envPath)) {
   console.log('ℹ No .env file found, using system environment variables');
 }
 
-// Validate environment variables
-function validateEnv() {
-  const required = ['MONAD_TESTNET_RPC_URL', 'AVALANCHE_FUJI_RPC_URL'];
+// Validate environment variables dynamically based on supported chains
+function validateEnv(supportedChains: string[]) {
+  const required = supportedChains.map(chain => 
+    `${chain.toUpperCase().replace('-', '_')}_RPC_URL`
+  );
   const missing = required.filter(key => !process.env[key]);
   
   if (missing.length > 0) {
@@ -28,21 +30,55 @@ function validateEnv() {
   }
 }
 
-// Chain configurations
-const CHAINS = {
-  'monad-testnet': {
-    id: 10143,
-    name: 'Monad Testnet',
-    rpcUrl: process.env.MONAD_TESTNET_RPC_URL!,
-    configPath: 'ccip-faucet-fe/public/configs/chains/monad-testnet.json'
-  },
-  'avalanche-fuji': {
-    id: 43113,
-    name: 'Avalanche Fuji',
-    rpcUrl: process.env.AVALANCHE_FUJI_RPC_URL!,
-    configPath: 'ccip-faucet-fe/public/configs/chains/helpers/avalanche-fuji.json'
+// Dynamic chain configuration loading from config files
+interface ChainInfo {
+  id: number;
+  name: string;
+  rpcUrl: string;
+  configPath: string;
+}
+
+interface SupportedChainsConfig {
+  supportedChains: string[];
+}
+
+function loadSupportedChains(): Record<string, ChainInfo> {
+  try {
+    // Read supported chains from config
+    const chainsConfigPath = join(process.cwd(), 'ccip-faucet-fe/public/configs/chains.json');
+    const chainsConfig: SupportedChainsConfig = JSON.parse(readFileSync(chainsConfigPath, 'utf-8'));
+    
+    const chains: Record<string, ChainInfo> = {};
+    
+    for (const chainName of chainsConfig.supportedChains) {
+      // Load individual chain config
+      const chainConfig = readConfig(chainName, getConfigPath(chainName, false));
+      const rpcEnvVar = `${chainName.toUpperCase().replace('-', '_')}_RPC_URL`;
+      
+      chains[chainName] = {
+        id: chainConfig.chainId || 0,
+        name: chainConfig.name || chainName,
+        rpcUrl: process.env[rpcEnvVar]!,
+        configPath: getConfigPath(chainName, false)
+      };
+    }
+    
+    console.log(`✓ Loaded ${Object.keys(chains).length} supported chains: ${Object.keys(chains).join(', ')}`);
+    return chains;
+  } catch (error) {
+    throw new Error(`Failed to load supported chains: ${error}`);
   }
-};
+}
+
+function getConfigPath(chainName: string, isHelper: boolean): string {
+  const basePath = 'ccip-faucet-fe/public/configs/chains';
+  
+  if (isHelper) {
+    return `${basePath}/helpers/${chainName}.json`;
+  } else {
+    return `${basePath}/${chainName}.json`;
+  }
+}
 
 // Contract ABIs (minimal)
 const FAUCET_ABI = parseAbi([
@@ -69,6 +105,8 @@ const VOLATILITY_FEED_ABI = parseAbi([
 ]);
 
 interface Config {
+  chainId?: number;
+  name?: string;
   common: {
     chainSelector: string;
     linkToken: string;
@@ -82,36 +120,61 @@ interface Config {
 }
 
 async function main() {
-  // Validate environment first
-  validateEnv();
-  
-  const activeChain = process.env.CHAIN_NAME || 'monad-testnet';
-  const helperChain = process.env.HELPER_NAME || 'avalanche-fuji';
-
-  console.log('=== CCIP Pre-Flight Checks ===');
-  console.log(`Active Chain: ${activeChain}`);
-  console.log(`Helper Chain: ${helperChain}`);
-  console.log('');
-  
-  // Debug: Show RPC URLs (first 20 chars for security)
-  console.log('=== RPC URLs ===');
-  console.log(`Monad RPC: ${process.env.MONAD_TESTNET_RPC_URL?.substring(0, 20)}...`);
-  console.log(`Fuji RPC: ${process.env.AVALANCHE_FUJI_RPC_URL?.substring(0, 20)}...`);
-  console.log('');
-
   try {
-    // Read configurations
-    const activeConfig = readConfig(activeChain, CHAINS[activeChain as keyof typeof CHAINS].configPath);
-    const helperConfig = readConfig(helperChain, CHAINS[helperChain as keyof typeof CHAINS].configPath);
+    // Load supported chains dynamically
+    const CHAINS = loadSupportedChains();
+    
+    // Validate environment for all supported chains
+    validateEnv(Object.keys(CHAINS));
+    
+    const activeChain = process.env.CHAIN_NAME || 'monad-testnet';
+    const helperChain = process.env.HELPER_NAME || 'avalanche-fuji';
 
-    // Create clients
+    console.log('=== CCIP Pre-Flight Checks ===');
+    console.log(`Active Chain: ${activeChain}`);
+    console.log(`Helper Chain: ${helperChain}`);
+    
+    // Detect same-chain deployment
+    const isSameChain = activeChain === helperChain;
+    if (isSameChain) {
+      console.log('🔗 Same-chain deployment detected - using direct volatility feeds');
+    } else {
+      console.log('🌐 Cross-chain deployment detected - using CCIP communication');
+    }
+    console.log('');
+    
+    // Validate that requested chains are supported
+    if (!CHAINS[activeChain]) {
+      throw new Error(`Active chain '${activeChain}' not found in supported chains: ${Object.keys(CHAINS).join(', ')}`);
+    }
+    if (!CHAINS[helperChain]) {
+      throw new Error(`Helper chain '${helperChain}' not found in supported chains: ${Object.keys(CHAINS).join(', ')}`);
+    }
+    
+    // Debug: Show RPC URLs (first 20 chars for security)
+    console.log('=== RPC URLs ===');
+    console.log(`${CHAINS[activeChain].name} RPC: ${CHAINS[activeChain].rpcUrl?.substring(0, 20)}...`);
+    console.log(`${CHAINS[helperChain].name} RPC: ${CHAINS[helperChain].rpcUrl?.substring(0, 20)}...`);
+    console.log('');
+
+    // Read configurations using dynamic paths
+    const activeConfig = readConfig(activeChain, CHAINS[activeChain].configPath);
+    
+    // Always read helper config from helpers/ folder (even for same-chain)
+    // This ensures we get the helper contract address
+    const helperConfig = readConfig(helperChain, getConfigPath(helperChain, true)); // Helper configs are in helpers/ folder
+
+    // Create clients using dynamic RPC URLs
     const activeClient = createPublicClient({
-      transport: http(CHAINS[activeChain as keyof typeof CHAINS].rpcUrl)
+      transport: http(CHAINS[activeChain].rpcUrl)
     });
 
-    const helperClient = createPublicClient({
-      transport: http(CHAINS[helperChain as keyof typeof CHAINS].rpcUrl)
-    });
+    // For same-chain deployment, use the same client; for cross-chain, create separate client
+    const helperClient = isSameChain 
+      ? activeClient  // Same chain - use same client (optimization)
+      : createPublicClient({
+          transport: http(CHAINS[helperChain].rpcUrl)
+        });
 
     console.log('=== 1. Contract Addresses ===');
     console.log(`Faucet Address: ${activeConfig.contracts.faucet}`);
@@ -129,31 +192,40 @@ async function main() {
       process.exit(1);
     }
 
-    // Check cross-chain mappings
-    console.log('=== 2. Cross-Chain Mappings ===');
-    const mappingsOk = await checkMappings(
-      activeClient, 
-      helperClient, 
-      activeConfig, 
-      helperConfig
-    );
+    // Check cross-chain mappings (skip for same-chain deployments)
+    let mappingsOk = true;
+    if (isSameChain) {
+      console.log('=== 2. Same-Chain Configuration ===');
+      console.log('[INFO] Same-chain deployment - skipping cross-chain mapping checks');
+      console.log('[INFO] Faucet will use direct volatility feed access instead of CCIP');
+      console.log('');
+    } else {
+      console.log('=== 2. Cross-Chain Mappings ===');
+      mappingsOk = await checkMappings(
+        activeClient, 
+        helperClient, 
+        activeConfig, 
+        helperConfig
+      );
+    }
 
-    // Check LINK balances
-    console.log('=== 3. LINK Token Balances ===');
+    // Check LINK balances in vaults (still needed for same-chain, but different requirements)
+    console.log('=== 3. LINK Token Balances (Vaults) ===');
     const linkOk = await checkLinkBalances(
       activeClient,
       helperClient,
       activeConfig,
-      helperConfig
+      helperConfig,
+      isSameChain
     );
 
     // Check volatility feed
     console.log('=== 4. Volatility Feed ===');
     const feedOk = await checkVolatilityFeed(helperClient, helperConfig);
 
-    // Check faucet state
-    console.log('=== 5. Faucet State ===');
-    const stateOk = await checkFaucetState(activeClient, activeConfig.contracts.faucet!);
+    // Check faucet state (tanks = distribution allocation, vaults = available balance)
+    console.log('=== 5. Faucet State (Tanks) ===');
+    const { stateOk, needsRefill } = await checkFaucetState(activeClient, activeConfig.contracts.faucet!);
 
     // Check owners
     console.log('=== 6. Owner Verification ===');
@@ -164,10 +236,26 @@ async function main() {
     const allChecksPass = mappingsOk && linkOk && feedOk && stateOk;
     
     if (allChecksPass) {
-      console.log('[READY] CCIP ready! All checks passed.');
-      console.log(`Run: cast send ${activeConfig.contracts.faucet} "triggerRefillCheck()" --private-key $FAUCET_PRIVATE_KEY --rpc-url $${activeChain.toUpperCase().replace('-', '_')}_RPC_URL`);
+      if (isSameChain) {
+        console.log('[READY] Same-chain deployment ready! All checks passed.');
+        console.log('[INFO] Faucet will use direct volatility feed access (no CCIP required)');
+      } else {
+        console.log('[READY] Cross-chain CCIP ready! All checks passed.');
+      }
+      const rpcEnvVar = `${activeChain.toUpperCase().replace('-', '_')}_RPC_URL`;
+      
+      if (needsRefill) {
+        console.log(`[ACTION] Tanks need refill - Run: cast send ${activeConfig.contracts.faucet} "triggerRefillCheck()" --private-key $FAUCET_PRIVATE_KEY --rpc-url $${rpcEnvVar}`);
+      } else {
+        console.log(`[INFO] Tanks are full - Faucet ready for user operations`);
+        console.log(`[OPTIONAL] To test refill: cast send ${activeConfig.contracts.faucet} "triggerRefillCheck()" --private-key $FAUCET_PRIVATE_KEY --rpc-url $${rpcEnvVar}`);
+      }
     } else {
-      console.log('[NOT READY] Fix issues above before triggering CCIP.');
+      if (isSameChain) {
+        console.log('[NOT READY] Fix issues above before triggering same-chain refill.');
+      } else {
+        console.log('[NOT READY] Fix issues above before triggering CCIP.');
+      }
     }
 
   } catch (error) {
@@ -256,10 +344,11 @@ async function checkLinkBalances(
   activeClient: any,
   helperClient: any,
   activeConfig: Config,
-  helperConfig: Config
+  helperConfig: Config,
+  isSameChain: boolean = false
 ): Promise<boolean> {
   try {
-    // Check faucet LINK balance
+    // Check faucet LINK vault balance (available for CCIP fees)
     const activeLinkContract = getContract({
       address: activeConfig.common.linkToken as `0x${string}`,
       abi: ERC20_ABI,
@@ -267,31 +356,48 @@ async function checkLinkBalances(
     });
 
     const faucetBalance = await activeLinkContract.read.balanceOf([activeConfig.contracts.faucet!]);
-    console.log(`Faucet LINK balance: ${formatEther(faucetBalance)} LINK`);
+    console.log(`Faucet LINK vault balance: ${formatEther(faucetBalance)} LINK`);
 
-    // Check helper LINK balance
-    const helperLinkContract = getContract({
-      address: helperConfig.common.linkToken as `0x${string}`,
-      abi: ERC20_ABI,
-      client: helperClient
-    });
-
-    const helperBalance = await helperLinkContract.read.balanceOf([helperConfig.contracts.helper!]);
-    console.log(`Helper LINK balance: ${formatEther(helperBalance)} LINK`);
-
-    const faucetOk = faucetBalance >= BigInt('1000000000000000000'); // 1 LINK
-    const helperOk = helperBalance >= BigInt('1000000000000000000'); // 1 LINK
-
-    if (faucetOk) {
-      console.log('[OK] Faucet has sufficient LINK (>=1)');
+    let helperBalance = BigInt(0);
+    
+    if (isSameChain) {
+      console.log('[INFO] Same-chain deployment - helper contract may not need LINK for direct feeds');
+      // For same-chain, we still check helper balance but it's less critical
+      const helperLinkContract = getContract({
+        address: helperConfig.common.linkToken as `0x${string}`,
+        abi: ERC20_ABI,
+        client: helperClient
+      });
+      helperBalance = await helperLinkContract.read.balanceOf([helperConfig.contracts.helper!]);
+      console.log(`Helper LINK vault balance: ${formatEther(helperBalance)} LINK (not required for same-chain)`);
     } else {
-      console.log('[ERROR] Faucet needs more LINK for outbound fees');
+      // Check helper LINK balance for cross-chain
+      const helperLinkContract = getContract({
+        address: helperConfig.common.linkToken as `0x${string}`,
+        abi: ERC20_ABI,
+        client: helperClient
+      });
+      helperBalance = await helperLinkContract.read.balanceOf([helperConfig.contracts.helper!]);
+      console.log(`Helper LINK vault balance: ${formatEther(helperBalance)} LINK`);
     }
 
-    if (helperOk) {
-      console.log('[OK] Helper has sufficient LINK (>=1)');
+    const faucetOk = faucetBalance >= BigInt('1000000000000000000'); // 1 LINK
+    const helperOk = isSameChain ? true : helperBalance >= BigInt('1000000000000000000'); // 1 LINK (not required for same-chain)
+
+    if (faucetOk) {
+      console.log('[OK] Faucet vault has sufficient LINK (>=1)');
     } else {
-      console.log('[ERROR] Helper needs more LINK for reply fees');
+      console.log('[ERROR] Faucet vault needs more LINK for outbound fees');
+    }
+
+    if (isSameChain) {
+      console.log('[OK] Helper vault LINK balance not required for same-chain deployment');
+    } else {
+      if (helperOk) {
+        console.log('[OK] Helper vault has sufficient LINK (>=1)');
+      } else {
+        console.log('[ERROR] Helper vault needs more LINK for reply fees');
+      }
     }
 
     console.log('');
@@ -366,6 +472,34 @@ async function checkVolatilityFeed(
   }
 }
 
+// Safe contract read with retry logic for different block tags
+async function safeContractRead(contract: any, functionName: string, args: any[] = []): Promise<any> {
+  const blockTags = ['latest', 'pending', 'safe'];
+  
+  for (const blockTag of blockTags) {
+    try {
+      if (args.length > 0) {
+        return await contract.read[functionName](args, { blockTag });
+      } else {
+        return await contract.read[functionName]({ blockTag });
+      }
+    } catch (error) {
+      // Continue to next block tag
+    }
+  }
+  
+  // If all block tags fail, try without specifying block tag
+  try {
+    if (args.length > 0) {
+      return await contract.read[functionName](args);
+    } else {
+      return await contract.read[functionName]();
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function checkFaucetState(client: any, faucetAddress: string): Promise<boolean> {
   try {
     const faucetContract = getContract({
@@ -374,13 +508,13 @@ async function checkFaucetState(client: any, faucetAddress: string): Promise<boo
       client
     });
 
-    // Check reservoir status
-    const [nativePool, nativeDripRate, linkPool, linkDripRate] = await faucetContract.read.getReservoirStatus();
-    console.log(`Native Pool: ${formatEther(nativePool)} tokens`);
-    console.log(`LINK Pool: ${formatEther(linkPool)} LINK`);
+    // Check tank status with retry logic (tanks = allocated for distribution)
+    const [nativeTank, nativeDripRate, linkTank, linkDripRate] = await safeContractRead(faucetContract, 'getReservoirStatus');
+    console.log(`Native Tank: ${formatEther(nativeTank)} tokens (allocated for distribution)`);
+    console.log(`LINK Tank: ${formatEther(linkTank)} LINK (allocated for distribution)`);
 
-    // Check refill status
-    const refillInProgress = await faucetContract.read.refillInProgress();
+    // Check refill status with retry logic
+    const refillInProgress = await safeContractRead(faucetContract, 'refillInProgress');
     console.log(`Refill in progress: ${refillInProgress}`);
 
     if (refillInProgress) {
@@ -391,26 +525,27 @@ async function checkFaucetState(client: any, faucetAddress: string): Promise<boo
       console.log('[OK] No active refill');
     }
 
-    // Check if refill is needed
-    const thresholdFactor = await faucetContract.read.thresholdFactor();
+    // Check if refill is needed with retry logic (refill transfers from vault to tank)
+    const thresholdFactor = await safeContractRead(faucetContract, 'thresholdFactor');
     const nativeThreshold = nativeDripRate * thresholdFactor;
     const linkThreshold = linkDripRate * thresholdFactor;
 
-    const needsRefill = nativePool < nativeThreshold || linkPool < linkThreshold;
+    const needsRefill = nativeTank < nativeThreshold || linkTank < linkThreshold;
 
     if (needsRefill) {
-      console.log('[OK] Refill needed');
+      console.log('[OK] Refill needed (tanks below threshold)');
     } else {
-      console.log('[WARN] Reservoirs full - may need to increase thresholdFactor');
-      console.log(`[TIP] Run: cast send ${faucetAddress} "setThresholdFactor(uint256)" 20 --private-key $FAUCET_PRIVATE_KEY --rpc-url $RPC_URL`);
+      console.log('[OK] Tanks sufficiently filled (above threshold)');
+      console.log('[INFO] Faucet ready for user operations');
     }
 
     console.log('');
-    return needsRefill;
+    return { stateOk: true, needsRefill }; // Both scenarios (needs refill OR tanks full) are OK states
   } catch (error) {
     console.log(`[ERROR] Faucet state check failed: ${error}`);
+    console.log('[INFO] This may be due to RPC limitations on historical state');
     console.log('');
-    return false;
+    return { stateOk: false, needsRefill: false };
   }
 }
 
@@ -433,8 +568,9 @@ async function checkOwners(
       client: helperClient
     });
 
-    const faucetOwner = await faucetContract.read.owner();
-    const helperOwner = await helperContract.read.owner();
+    // Use safe contract read for owner checks
+    const faucetOwner = await safeContractRead(faucetContract, 'owner');
+    const helperOwner = await safeContractRead(helperContract, 'owner');
 
     console.log(`Faucet owner: ${faucetOwner}`);
     console.log(`Helper owner: ${helperOwner}`);
@@ -448,6 +584,7 @@ async function checkOwners(
     console.log('');
   } catch (error) {
     console.log(`[ERROR] Owner check failed: ${error}`);
+    console.log('[INFO] This may be due to RPC limitations on historical state');
     console.log('');
   }
 }

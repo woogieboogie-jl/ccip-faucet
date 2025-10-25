@@ -28,14 +28,26 @@ export default defineConfig(({ mode }) => {
     
     console.log('🔧 Auto-creating VITE_ variables from base variables...')
     
-    // Define which base variables should be exposed as VITE_ variables
-    const exposeAsVite = [
-      'PIMLICO_API_KEY',
-      'AVALANCHE_FUJI_RPC_URL',
-      'MONAD_TESTNET_RPC_URL',
-      'POLICY_ID',
-      'WALLETCONNECT_PROJECT_ID',
-    ]
+    // Dynamically expose relevant environment variables from .env file as VITE_ variables
+    // Only include variables that are actually needed by the frontend
+    const shouldExposeToFrontend = (key: string): boolean => {
+      return (
+        // Include RPC URLs for all chains
+        key.endsWith('_RPC_URL') ||
+        // Include API keys (but exclude private keys)
+        (key.includes('API_KEY') && !key.includes('PRIVATE_KEY')) ||
+        // Include specific frontend-relevant variables
+        key === 'POLICY_ID' ||
+        key === 'WALLETCONNECT_PROJECT_ID' ||
+        // Exclude already prefixed VITE_ vars (they'll be handled separately)
+        false
+      ) && !key.startsWith('VITE_') && !key.includes('PRIVATE_KEY') && !key.includes('SECRET')
+    }
+    
+    // Get all environment variables from .env file that should be exposed
+    const exposeAsVite = Object.keys(env).filter(shouldExposeToFrontend)
+    
+    console.log('🎯 Found environment variables to expose:', exposeAsVite)
     
     // Auto-create VITE_ versions of base variables
     exposeAsVite.forEach(baseVar => {
