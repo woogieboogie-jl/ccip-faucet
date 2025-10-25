@@ -221,14 +221,15 @@ contract Faucet is CCIPReceiver, Ownable(msg.sender) {
     // =============================================================
 
     /// @notice Detect if address is a Chainlink price feed (volatility feed)
+    /// @dev Uses staticcall with gas limit to avoid issues with non-existent contracts
     function _isVolatilityFeed(address addr) internal view returns (bool) {
-        try AggregatorV3Interface(addr).latestRoundData() returns (
-            uint80, int256, uint256, uint256, uint80
-        ) {
-            return true;
-        } catch {
-            return false;
-        }
+        // Single low-level staticcall with controlled gas
+        // If it's a feed: succeeds and returns valid data
+        // If it's not a feed or doesn't exist on this chain: fails
+        (bool success, ) = addr.staticcall{gas: 50000}(
+            abi.encodeWithSelector(AggregatorV3Interface.latestRoundData.selector)
+        );
+        return success;
     }
 
     /// @notice Handle same-chain refill with direct volatility access
