@@ -7,8 +7,10 @@ import type { ChainConfig, DerivedConfig } from './types/config'
 export const autoDerivation = {
   /**
    * Derive configuration from chain config
+   * @param chainConfig - The chain configuration
+   * @param chainName - The chain name in kebab-case (e.g., "arbitrum-sepolia")
    */
-  deriveConfig(chainConfig: ChainConfig): DerivedConfig {
+  deriveConfig(chainConfig: ChainConfig, chainName?: string): DerivedConfig {
     return {
       // Theme
       primaryColor: chainConfig.themeColor || '#8A5CF6',
@@ -18,8 +20,9 @@ export const autoDerivation = {
         '--chain-theme-color': chainConfig.themeColor || '#8A5CF6',
       },
       
-      // Assets
-      nativeTokenIcon: `/tokens/${chainConfig.ticker.toLowerCase()}.png`,
+      // Assets - Separate network branding from token icons
+      networkIcon: chainName ? `/networks/${chainName}.png` : `/tokens/${chainConfig.ticker.toLowerCase()}.png`, // Chain-specific logo
+      nativeTokenIcon: `/tokens/${chainConfig.ticker.toLowerCase()}.png`, // Token logo (can be shared across chains)
       linkTokenIcon: '/tokens/link.png',
       
       // UI Text

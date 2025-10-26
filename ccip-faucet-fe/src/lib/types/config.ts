@@ -66,7 +66,8 @@ export interface DerivedConfig {
   cssCustomProperties: Record<string, string>
   
   // Assets
-  nativeTokenIcon: string
+  networkIcon: string        // Chain-specific branding (e.g., Arbitrum logo)
+  nativeTokenIcon: string    // Token icon (e.g., ETH, AVAX, MON)
   linkTokenIcon: string
   
   // UI Text

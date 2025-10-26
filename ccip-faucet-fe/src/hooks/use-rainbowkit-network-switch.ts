@@ -200,7 +200,7 @@ export function useRainbowKitNetworkSwitch() {
           chains.push({
             id: chainData.chainId,
             name: chainData.name,
-            icon: `/tokens/${chainData.ticker.toLowerCase()}.png`, // Dynamic icon based on ticker
+            icon: `/networks/${chainName}.png`, // Network-specific branding (not token logo)
           })
         } catch (error) {
           console.warn(`Failed to load chain config for ${chainName}:`, error)

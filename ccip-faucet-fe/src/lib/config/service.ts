@@ -29,9 +29,10 @@ export class ConfigService {
       // Load configurations
       const chainConfig = await configLoader.getActiveChainConfig()
       const helperChainConfig = await configLoader.getHelperChainConfig()
+      const activeChainName = configLoader.getActiveChainName()
       
-      // Auto-derive theme, UI text, and asset paths
-      const derivedConfig = themeManager.deriveConfig(chainConfig)
+      // Auto-derive theme, UI text, and asset paths (pass chain name for network icon)
+      const derivedConfig = themeManager.deriveConfig(chainConfig, activeChainName || undefined)
       
       return {
         chainConfig,
@@ -92,7 +93,7 @@ export class ConfigService {
     derivedConfig: DerivedConfig
   }> {
     const chainConfig = await configLoader.loadChainConfig(chainName)
-    const derivedConfig = themeManager.deriveConfig(chainConfig)
+    const derivedConfig = themeManager.deriveConfig(chainConfig, chainName)
     
     return {
       chainConfig,
