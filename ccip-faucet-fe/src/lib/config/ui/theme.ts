@@ -153,9 +153,10 @@ export class ThemeManager {
   }
 
   /**
-   * Generate asset paths from ticker
+   * Generate asset paths from ticker and chain name
    */
-  private generateAssetPaths(ticker: string): {
+  private generateAssetPaths(ticker: string, chainName?: string): {
+    networkIcon: string
     nativeTokenIcon: string
     linkTokenIcon: string
     fallbackIcon: string
@@ -163,7 +164,8 @@ export class ThemeManager {
     const lowerTicker = ticker.toLowerCase()
     
     return {
-      nativeTokenIcon: `/tokens/${lowerTicker}.png`,
+      networkIcon: chainName ? `/networks/${chainName}.png` : `/tokens/${lowerTicker}.png`, // Chain-specific logo
+      nativeTokenIcon: `/tokens/${lowerTicker}.png`, // Token logo (shared across chains with same token)
       linkTokenIcon: `/tokens/link.png`, // LINK is always the same
       fallbackIcon: `/tokens/placeholder.png` // Generic fallback
     }
@@ -192,10 +194,12 @@ export class ThemeManager {
 
   /**
    * Derive all configuration from a chain config
+   * @param chainConfig - The chain configuration
+   * @param chainName - Optional chain name in kebab-case for network icon (e.g., "arbitrum-sepolia")
    */
-  deriveConfig(chainConfig: ChainConfig): DerivedConfig {
+  deriveConfig(chainConfig: ChainConfig, chainName?: string): DerivedConfig {
     const theme = this.generateTheme(chainConfig)
-    const assets = this.generateAssetPaths(chainConfig.ticker)
+    const assets = this.generateAssetPaths(chainConfig.ticker, chainName)
     const uiText = this.generateUIText(chainConfig)
     
     const derivedConfig: DerivedConfig = {
@@ -206,7 +210,8 @@ export class ThemeManager {
       cssCustomProperties: theme.cssCustomProperties,
       
       // Assets
-      nativeTokenIcon: assets.nativeTokenIcon,
+      networkIcon: assets.networkIcon,           // Chain-specific branding
+      nativeTokenIcon: assets.nativeTokenIcon,   // Token icon (can be shared)
       linkTokenIcon: assets.linkTokenIcon,
       fallbackIcon: assets.fallbackIcon,
       
